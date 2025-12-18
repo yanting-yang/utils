@@ -7,9 +7,10 @@
     <style>
         .tabs{display:flex}
         .tab-btn.active{font-weight:bold}
-        .tab-content{display:none;overflow:auto}
+        .tab-content{display:none;overflow:auto;position:relative}
         .tab-content.active{display:block}
         pre{white-space:pre-wrap;word-wrap:break-word}
+        .copy-btn{position:absolute;top:5px;right:5px}
     </style>
 </head>
 <body>
@@ -39,15 +40,18 @@
         <output id="status"></output>
     </fieldset>
 
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="xml">Raw XML</button>
-        <button class="tab-btn" data-tab="json">JSON</button>
-        <button class="tab-btn" data-tab="result">Parsed Result</button>
-    </div>
+    <fieldset>
+        <legend>Step 3: View Results</legend>
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="xml">Raw XML</button>
+            <button class="tab-btn" data-tab="json">JSON</button>
+            <button class="tab-btn" data-tab="result">Parsed Result</button>
+        </div>
 
-    <section id="xml" class="tab-content active"><pre id="xmlOutput"></pre></section>
-    <section id="json" class="tab-content"><pre id="jsonOutput"></pre></section>
-    <section id="result" class="tab-content"><pre id="resultOutput"></pre></section>
+        <section id="xml" class="tab-content active"><button class="copy-btn" data-target="xmlOutput">Copy</button><pre id="xmlOutput"></pre></section>
+        <section id="json" class="tab-content"><button class="copy-btn" data-target="jsonOutput">Copy</button><pre id="jsonOutput"></pre></section>
+        <section id="result" class="tab-content"><button class="copy-btn" data-target="resultOutput">Copy</button><pre id="resultOutput"></pre></section>
+    </fieldset>
 
     <script>
         const $ = id => document.getElementById(id);
@@ -157,6 +161,21 @@
             reader.onerror = () => status.textContent = 'Error reading file.';
             reader.readAsText(file);
         }
+
+        // Copy button functionality
+        $$('.copy-btn').forEach(btn => btn.addEventListener('click', async () => {
+            const targetId = btn.dataset.target;
+            const text = $(targetId).textContent;
+            if (!text) return;
+            try {
+                await navigator.clipboard.writeText(text);
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            } catch (err) {
+                btn.textContent = 'Failed';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            }
+        }));
 
         $('generateUrlBtn').addEventListener('click', generateArxivUrl);
         $('fetchBtn').addEventListener('click', fetchArxiv);
