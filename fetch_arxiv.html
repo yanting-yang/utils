@@ -17,6 +17,7 @@
     <h1>ArXiv Fetcher</h1>
 
     <fieldset>
+        <legend>Step 1: Set Parameters</legend>
         <label>Category: <input type="text" id="catInput" value="cs*" placeholder="e.g., cs*, cs.AI"></label>
         <label>Max Results: <input type="number" id="maxResultsInput" value="10" min="1" max="2000"></label>
         <label>Sort By:
@@ -26,12 +27,17 @@
                 <option value="submittedDate">Submitted Date</option>
             </select>
         </label>
+        <br>
+        <button type="button" id="generateUrlBtn">Generate URL</button>
+        <output id="urlDisplay"></output>
     </fieldset>
 
-    <button id="fetchBtn">Fetch Publications</button>
-    <label>Or upload XML: <input type="file" id="xmlFileInput" accept=".xml"></label>
-    <output id="status"></output>
-    <output id="urlDisplay"></output>
+    <fieldset>
+        <legend>Step 2: Fetch Data</legend>
+        <button id="fetchBtn">Fetch Publications</button>
+        using <a href="https://cors-anywhere.com/" target="_blank">CORS Anywhere</a> <b>OR</b> upload XML: <input type="file" id="xmlFileInput" accept=".xml">
+        <output id="status"></output>
+    </fieldset>
 
     <div class="tabs">
         <button class="tab-btn active" data-tab="xml">Raw XML</button>
@@ -98,17 +104,21 @@
             return jsonData.length;
         }
 
-        async function fetchArxiv() {
-            const [status, urlDisplay] = ['status', 'urlDisplay'].map($);
-
-            status.textContent = 'Fetching data...';
-            $('xmlOutput').textContent = $('jsonOutput').textContent = $('resultOutput').textContent = '';
-
+        function generateArxivUrl() {
             const cat = $('catInput').value.trim() || 'cs*';
             const maxResults = Math.min(2000, Math.max(1, +$('maxResultsInput').value || 10));
             const sortBy = $('sortBySelect').value;
             const arxivUrl = `${ARXIV_BASE_URL}?search_query=cat:${encodeURIComponent(cat)}&max_results=${maxResults}&sortBy=${sortBy}`;
-            urlDisplay.textContent = arxivUrl;
+            $('urlDisplay').innerHTML = `<a href="${arxivUrl}" target="_blank">${arxivUrl}</a>`;
+            return arxivUrl;
+        }
+
+        async function fetchArxiv() {
+            const status = $('status');
+            const arxivUrl = generateArxivUrl();
+
+            status.textContent = 'Fetching data...';
+            $('xmlOutput').textContent = $('jsonOutput').textContent = $('resultOutput').textContent = '';
 
             try {
                 const response = await fetch(PROXY_URL + arxivUrl);
@@ -148,6 +158,7 @@
             reader.readAsText(file);
         }
 
+        $('generateUrlBtn').addEventListener('click', generateArxivUrl);
         $('fetchBtn').addEventListener('click', fetchArxiv);
         $('xmlFileInput').addEventListener('change', handleFileUpload);
     </script>
