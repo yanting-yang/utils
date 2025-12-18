@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArXiv JSON Fetcher</title>
+    <style>
+        .tabs{display:flex}
+        .tab-btn.active{font-weight:bold}
+        .tab-content{display:none;overflow:auto}
+        .tab-content.active{display:block}
+        pre{white-space:pre-wrap;word-wrap:break-word}
+    </style>
+</head>
+<body>
+    <nav><a href="index.html">Home</a></nav>
+    <h1>ArXiv Fetcher</h1>
+
+    <fieldset>
+        <label>Category: <input type="text" id="catInput" value="cs*" placeholder="e.g., cs*, cs.AI"></label>
+        <label>Max Results: <input type="number" id="maxResultsInput" value="10" min="1" max="2000"></label>
+        <label>Sort By:
+            <select id="sortBySelect">
+                <option value="relevance">Relevance</option>
+                <option value="lastUpdatedDate" selected>Last Updated Date</option>
+                <option value="submittedDate">Submitted Date</option>
+            </select>
+        </label>
+    </fieldset>
+
+    <button id="fetchBtn">Fetch Publications</button>
+    <label>Or upload XML: <input type="file" id="xmlFileInput" accept=".xml"></label>
+    <output id="status"></output>
+    <output id="urlDisplay"></output>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="xml">Raw XML</button>
+        <button class="tab-btn" data-tab="json">JSON</button>
+        <button class="tab-btn" data-tab="result">Parsed Result</button>
+    </div>
+
+    <section id="xml" class="tab-content active"><pre id="xmlOutput"></pre></section>
+    <section id="json" class="tab-content"><pre id="jsonOutput"></pre></section>
+    <section id="result" class="tab-content"><pre id="resultOutput"></pre></section>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const $$ = sel => document.querySelectorAll(sel);
+
+        // Tab switching
+        $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
+            $$('.tab-btn').forEach(b => b.classList.remove('active'));
+            $$('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            $(btn.dataset.tab).classList.add('active');
+        }));
+
+        const PROXY_URL = 'https://cors-anywhere.com/';
+        const ARXIV_BASE_URL = 'http://export.arxiv.org/api/query';
+
+        function processXml(xml) {
+            const [xmlOutput, jsonOutput, resultOutput] = ['xmlOutput', 'jsonOutput', 'resultOutput'].map($);
+            xmlOutput.textContent = xml;
+
+            const doc = new DOMParser().parseFromString(xml, 'application/xml');
+            const jsonData = [...doc.querySelectorAll('entry')].map(entry => ({
+                id: entry.querySelector('id')?.textContent ?? null,
+                title: entry.querySelector('title')?.textContent?.trim() ?? null,
+                updated: entry.querySelector('updated')?.textContent ?? null,
+                published: entry.querySelector('published')?.textContent ?? null,
+                summary: entry.querySelector('summary')?.textContent?.trim() ?? null,
+                links: [...entry.querySelectorAll('link')].map(link => ({
+                    href: link.getAttribute('href'),
+                    rel: link.getAttribute('rel'),
+                    type: link.getAttribute('type'),
+                    title: link.getAttribute('title')
+                })),
+                categories: [...entry.querySelectorAll('category')].map(cat => ({
+                    term: cat.getAttribute('term'),
+                    scheme: cat.getAttribute('scheme')
+                })),
+                'arxiv:primary_category': entry.querySelector('primary_category')?.getAttribute('term') ?? null,
+                'arxiv:comment': entry.querySelector('comment')?.textContent ?? null,
+                authors: [...entry.querySelectorAll('author')].map(a => ({
+                    name: a.querySelector('name')?.textContent ?? null
+                }))
+            }));
+
+            jsonOutput.textContent = JSON.stringify(jsonData, null, 2);
+
+            resultOutput.textContent = jsonData.map(({id, title, authors, summary}) =>
+                `ID: ${(id || 'N/A').replace('http://arxiv.org/abs/', '')}\n` +
+                `Title: ${title || 'N/A'}\n` +
+                `Authors: ${authors.map(a => a.name).join(', ')}\n` +
+                `Abstract: ${summary || 'N/A'}\n`
+            ).join('\n') || 'No entries found.';
+
+            return jsonData.length;
+        }
+
+        async function fetchArxiv() {
+            const [status, urlDisplay] = ['status', 'urlDisplay'].map($);
+
+            status.textContent = 'Fetching data...';
+            $('xmlOutput').textContent = $('jsonOutput').textContent = $('resultOutput').textContent = '';
+
+            const cat = $('catInput').value.trim() || 'cs*';
+            const maxResults = Math.min(2000, Math.max(1, +$('maxResultsInput').value || 10));
+            const sortBy = $('sortBySelect').value;
+            const arxivUrl = `${ARXIV_BASE_URL}?search_query=cat:${encodeURIComponent(cat)}&max_results=${maxResults}&sortBy=${sortBy}`;
+            urlDisplay.textContent = arxivUrl;
+
+            try {
+                const response = await fetch(PROXY_URL + arxivUrl);
+                if (!response.ok) {
+                    throw new Error(response.status === 403
+                        ? 'Access Denied. Please visit the CORS Anywhere demo page to request temporary access.'
+                        : 'Network response was not ok: ' + response.statusText);
+                }
+
+                const xml = await response.text();
+                const count = processXml(xml);
+                status.textContent = `Done! Found ${count} entries.`;
+            } catch (error) {
+                status.textContent = 'Error: ' + error.message;
+                console.error('Fetch error:', error);
+            }
+        }
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const status = $('status');
+            status.textContent = 'Reading file...';
+            $('urlDisplay').textContent = `File: ${file.name}`;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const count = processXml(evt.target.result);
+                    status.textContent = `Done! Found ${count} entries from file.`;
+                } catch (error) {
+                    status.textContent = 'Error parsing XML: ' + error.message;
+                }
+            };
+            reader.onerror = () => status.textContent = 'Error reading file.';
+            reader.readAsText(file);
+        }
+
+        $('fetchBtn').addEventListener('click', fetchArxiv);
+        $('xmlFileInput').addEventListener('change', handleFileUpload);
+    </script>
+</body>
+</html>
