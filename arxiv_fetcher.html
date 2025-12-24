@@ -19,7 +19,207 @@
 
     <fieldset>
         <legend>Step 1: Set Parameters</legend>
-        <label>Category: <input type="text" id="catInput" value="cs*" placeholder="e.g., cs*, cs.AI"></label>
+        <label>Categories (select multiple):</label>
+        <div id="categoryContainer" style="font-size:0.9em;">
+            <!-- Computer Science -->
+            <details open><summary><strong>Computer Science (cs)</strong></summary>
+            <div>
+                <label><input type="checkbox" name="category" value="cs.*"><strong> cs.* (All)</strong></label>
+                <label><input type="checkbox" name="category" value="cs.AI"> cs.AI</label>
+                <label><input type="checkbox" name="category" value="cs.AR"> cs.AR</label>
+                <label><input type="checkbox" name="category" value="cs.CC"> cs.CC</label>
+                <label><input type="checkbox" name="category" value="cs.CE"> cs.CE</label>
+                <label><input type="checkbox" name="category" value="cs.CG"> cs.CG</label>
+                <label><input type="checkbox" name="category" value="cs.CL"> cs.CL</label>
+                <label><input type="checkbox" name="category" value="cs.CR"> cs.CR</label>
+                <label><input type="checkbox" name="category" value="cs.CV"> cs.CV</label>
+                <label><input type="checkbox" name="category" value="cs.CY"> cs.CY</label>
+                <label><input type="checkbox" name="category" value="cs.DB"> cs.DB</label>
+                <label><input type="checkbox" name="category" value="cs.DC"> cs.DC</label>
+                <label><input type="checkbox" name="category" value="cs.DL"> cs.DL</label>
+                <label><input type="checkbox" name="category" value="cs.DM"> cs.DM</label>
+                <label><input type="checkbox" name="category" value="cs.DS"> cs.DS</label>
+                <label><input type="checkbox" name="category" value="cs.ET"> cs.ET</label>
+                <label><input type="checkbox" name="category" value="cs.FL"> cs.FL</label>
+                <label><input type="checkbox" name="category" value="cs.GL"> cs.GL</label>
+                <label><input type="checkbox" name="category" value="cs.GR"> cs.GR</label>
+                <label><input type="checkbox" name="category" value="cs.GT"> cs.GT</label>
+                <label><input type="checkbox" name="category" value="cs.HC"> cs.HC</label>
+                <label><input type="checkbox" name="category" value="cs.IR"> cs.IR</label>
+                <label><input type="checkbox" name="category" value="cs.IT"> cs.IT</label>
+                <label><input type="checkbox" name="category" value="cs.LG"> cs.LG</label>
+                <label><input type="checkbox" name="category" value="cs.LO"> cs.LO</label>
+                <label><input type="checkbox" name="category" value="cs.MA"> cs.MA</label>
+                <label><input type="checkbox" name="category" value="cs.MM"> cs.MM</label>
+                <label><input type="checkbox" name="category" value="cs.MS"> cs.MS</label>
+                <label><input type="checkbox" name="category" value="cs.NA"> cs.NA</label>
+                <label><input type="checkbox" name="category" value="cs.NE"> cs.NE</label>
+                <label><input type="checkbox" name="category" value="cs.NI"> cs.NI</label>
+                <label><input type="checkbox" name="category" value="cs.OH"> cs.OH</label>
+                <label><input type="checkbox" name="category" value="cs.OS"> cs.OS</label>
+                <label><input type="checkbox" name="category" value="cs.PF"> cs.PF</label>
+                <label><input type="checkbox" name="category" value="cs.PL"> cs.PL</label>
+                <label><input type="checkbox" name="category" value="cs.RO"> cs.RO</label>
+                <label><input type="checkbox" name="category" value="cs.SC"> cs.SC</label>
+                <label><input type="checkbox" name="category" value="cs.SD"> cs.SD</label>
+                <label><input type="checkbox" name="category" value="cs.SE"> cs.SE</label>
+                <label><input type="checkbox" name="category" value="cs.SI"> cs.SI</label>
+                <label><input type="checkbox" name="category" value="cs.SY"> cs.SY</label>
+            </div></details>
+            <!-- Economics -->
+            <details><summary><strong>Economics (econ)</strong></summary>
+            <div>
+                <label><input type="checkbox" name="category" value="econ.*"><strong> econ.* (All)</strong></label>
+                <label><input type="checkbox" name="category" value="econ.EM"> econ.EM</label>
+                <label><input type="checkbox" name="category" value="econ.GN"> econ.GN</label>
+                <label><input type="checkbox" name="category" value="econ.TH"> econ.TH</label>
+            </div></details>
+            <!-- Electrical Engineering and Systems Science -->
+            <details><summary><strong>Electrical Engineering and Systems Science (eess)</strong></summary>
+            <div>
+                <label><input type="checkbox" name="category" value="eess.*"><strong> eess.* (All)</strong></label>
+                <label><input type="checkbox" name="category" value="eess.AS"> eess.AS</label>
+                <label><input type="checkbox" name="category" value="eess.IV"> eess.IV</label>
+                <label><input type="checkbox" name="category" value="eess.SP"> eess.SP</label>
+                <label><input type="checkbox" name="category" value="eess.SY"> eess.SY</label>
+            </div></details>
+            <!-- Mathematics -->
+            <details><summary><strong>Mathematics (math)</strong></summary>
+            <div>
+                <label><input type="checkbox" name="category" value="math.*"><strong> math.* (All)</strong></label>
+                <label><input type="checkbox" name="category" value="math.AC"> math.AC</label>
+                <label><input type="checkbox" name="category" value="math.AG"> math.AG</label>
+                <label><input type="checkbox" name="category" value="math.AP"> math.AP</label>
+                <label><input type="checkbox" name="category" value="math.AT"> math.AT</label>
+                <label><input type="checkbox" name="category" value="math.CA"> math.CA</label>
+                <label><input type="checkbox" name="category" value="math.CO"> math.CO</label>
+                <label><input type="checkbox" name="category" value="math.CT"> math.CT</label>
+                <label><input type="checkbox" name="category" value="math.CV"> math.CV</label>
+                <label><input type="checkbox" name="category" value="math.DG"> math.DG</label>
+                <label><input type="checkbox" name="category" value="math.DS"> math.DS</label>
+                <label><input type="checkbox" name="category" value="math.FA"> math.FA</label>
+                <label><input type="checkbox" name="category" value="math.GM"> math.GM</label>
+                <label><input type="checkbox" name="category" value="math.GN"> math.GN</label>
+                <label><input type="checkbox" name="category" value="math.GR"> math.GR</label>
+                <label><input type="checkbox" name="category" value="math.GT"> math.GT</label>
+                <label><input type="checkbox" name="category" value="math.HO"> math.HO</label>
+                <label><input type="checkbox" name="category" value="math.IT"> math.IT</label>
+                <label><input type="checkbox" name="category" value="math.KT"> math.KT</label>
+                <label><input type="checkbox" name="category" value="math.LO"> math.LO</label>
+                <label><input type="checkbox" name="category" value="math.MG"> math.MG</label>
+                <label><input type="checkbox" name="category" value="math.MP"> math.MP</label>
+                <label><input type="checkbox" name="category" value="math.NA"> math.NA</label>
+                <label><input type="checkbox" name="category" value="math.NT"> math.NT</label>
+                <label><input type="checkbox" name="category" value="math.OA"> math.OA</label>
+                <label><input type="checkbox" name="category" value="math.OC"> math.OC</label>
+                <label><input type="checkbox" name="category" value="math.PR"> math.PR</label>
+                <label><input type="checkbox" name="category" value="math.QA"> math.QA</label>
+                <label><input type="checkbox" name="category" value="math.RA"> math.RA</label>
+                <label><input type="checkbox" name="category" value="math.RT"> math.RT</label>
+                <label><input type="checkbox" name="category" value="math.SG"> math.SG</label>
+                <label><input type="checkbox" name="category" value="math.SP"> math.SP</label>
+                <label><input type="checkbox" name="category" value="math.ST"> math.ST</label>
+            </div></details>
+            <!-- Physics -->
+            <details><summary><strong>Physics</strong></summary>
+            <div>
+                <label><input type="checkbox" name="category" value="astro-ph.*"><strong> astro-ph.* (All)</strong></label>
+                <label><input type="checkbox" name="category" value="cond-mat.*"><strong> cond-mat.* (All)</strong></label>
+                <label><input type="checkbox" name="category" value="nlin.*"><strong> nlin.* (All)</strong></label>
+                <label><input type="checkbox" name="category" value="physics.*"><strong> physics.* (All)</strong></label>
+                <label><input type="checkbox" name="category" value="astro-ph.CO"> astro-ph.CO</label>
+                <label><input type="checkbox" name="category" value="astro-ph.EP"> astro-ph.EP</label>
+                <label><input type="checkbox" name="category" value="astro-ph.GA"> astro-ph.GA</label>
+                <label><input type="checkbox" name="category" value="astro-ph.HE"> astro-ph.HE</label>
+                <label><input type="checkbox" name="category" value="astro-ph.IM"> astro-ph.IM</label>
+                <label><input type="checkbox" name="category" value="astro-ph.SR"> astro-ph.SR</label>
+                <label><input type="checkbox" name="category" value="cond-mat.dis-nn"> cond-mat.dis-nn</label>
+                <label><input type="checkbox" name="category" value="cond-mat.mes-hall"> cond-mat.mes-hall</label>
+                <label><input type="checkbox" name="category" value="cond-mat.mtrl-sci"> cond-mat.mtrl-sci</label>
+                <label><input type="checkbox" name="category" value="cond-mat.other"> cond-mat.other</label>
+                <label><input type="checkbox" name="category" value="cond-mat.quant-gas"> cond-mat.quant-gas</label>
+                <label><input type="checkbox" name="category" value="cond-mat.soft"> cond-mat.soft</label>
+                <label><input type="checkbox" name="category" value="cond-mat.stat-mech"> cond-mat.stat-mech</label>
+                <label><input type="checkbox" name="category" value="cond-mat.str-el"> cond-mat.str-el</label>
+                <label><input type="checkbox" name="category" value="cond-mat.supr-con"> cond-mat.supr-con</label>
+                <label><input type="checkbox" name="category" value="gr-qc"> gr-qc</label>
+                <label><input type="checkbox" name="category" value="hep-ex"> hep-ex</label>
+                <label><input type="checkbox" name="category" value="hep-lat"> hep-lat</label>
+                <label><input type="checkbox" name="category" value="hep-ph"> hep-ph</label>
+                <label><input type="checkbox" name="category" value="hep-th"> hep-th</label>
+                <label><input type="checkbox" name="category" value="math-ph"> math-ph</label>
+                <label><input type="checkbox" name="category" value="nlin.AO"> nlin.AO</label>
+                <label><input type="checkbox" name="category" value="nlin.CD"> nlin.CD</label>
+                <label><input type="checkbox" name="category" value="nlin.CG"> nlin.CG</label>
+                <label><input type="checkbox" name="category" value="nlin.PS"> nlin.PS</label>
+                <label><input type="checkbox" name="category" value="nlin.SI"> nlin.SI</label>
+                <label><input type="checkbox" name="category" value="nucl-ex"> nucl-ex</label>
+                <label><input type="checkbox" name="category" value="nucl-th"> nucl-th</label>
+                <label><input type="checkbox" name="category" value="physics.acc-ph"> physics.acc-ph</label>
+                <label><input type="checkbox" name="category" value="physics.ao-ph"> physics.ao-ph</label>
+                <label><input type="checkbox" name="category" value="physics.app-ph"> physics.app-ph</label>
+                <label><input type="checkbox" name="category" value="physics.atm-clus"> physics.atm-clus</label>
+                <label><input type="checkbox" name="category" value="physics.atom-ph"> physics.atom-ph</label>
+                <label><input type="checkbox" name="category" value="physics.bio-ph"> physics.bio-ph</label>
+                <label><input type="checkbox" name="category" value="physics.chem-ph"> physics.chem-ph</label>
+                <label><input type="checkbox" name="category" value="physics.class-ph"> physics.class-ph</label>
+                <label><input type="checkbox" name="category" value="physics.comp-ph"> physics.comp-ph</label>
+                <label><input type="checkbox" name="category" value="physics.data-an"> physics.data-an</label>
+                <label><input type="checkbox" name="category" value="physics.ed-ph"> physics.ed-ph</label>
+                <label><input type="checkbox" name="category" value="physics.flu-dyn"> physics.flu-dyn</label>
+                <label><input type="checkbox" name="category" value="physics.gen-ph"> physics.gen-ph</label>
+                <label><input type="checkbox" name="category" value="physics.geo-ph"> physics.geo-ph</label>
+                <label><input type="checkbox" name="category" value="physics.hist-ph"> physics.hist-ph</label>
+                <label><input type="checkbox" name="category" value="physics.ins-det"> physics.ins-det</label>
+                <label><input type="checkbox" name="category" value="physics.med-ph"> physics.med-ph</label>
+                <label><input type="checkbox" name="category" value="physics.optics"> physics.optics</label>
+                <label><input type="checkbox" name="category" value="physics.plasm-ph"> physics.plasm-ph</label>
+                <label><input type="checkbox" name="category" value="physics.pop-ph"> physics.pop-ph</label>
+                <label><input type="checkbox" name="category" value="physics.soc-ph"> physics.soc-ph</label>
+                <label><input type="checkbox" name="category" value="physics.space-ph"> physics.space-ph</label>
+                <label><input type="checkbox" name="category" value="quant-ph"> quant-ph</label>
+            </div></details>
+            <!-- Quantitative Biology -->
+            <details><summary><strong>Quantitative Biology (q-bio)</strong></summary>
+            <div>
+                <label><input type="checkbox" name="category" value="q-bio.*"><strong> q-bio.* (All)</strong></label>
+                <label><input type="checkbox" name="category" value="q-bio.BM"> q-bio.BM</label>
+                <label><input type="checkbox" name="category" value="q-bio.CB"> q-bio.CB</label>
+                <label><input type="checkbox" name="category" value="q-bio.GN"> q-bio.GN</label>
+                <label><input type="checkbox" name="category" value="q-bio.MN"> q-bio.MN</label>
+                <label><input type="checkbox" name="category" value="q-bio.NC"> q-bio.NC</label>
+                <label><input type="checkbox" name="category" value="q-bio.OT"> q-bio.OT</label>
+                <label><input type="checkbox" name="category" value="q-bio.PE"> q-bio.PE</label>
+                <label><input type="checkbox" name="category" value="q-bio.QM"> q-bio.QM</label>
+                <label><input type="checkbox" name="category" value="q-bio.SC"> q-bio.SC</label>
+                <label><input type="checkbox" name="category" value="q-bio.TO"> q-bio.TO</label>
+            </div></details>
+            <!-- Quantitative Finance -->
+            <details><summary><strong>Quantitative Finance (q-fin)</strong></summary>
+            <div>
+                <label><input type="checkbox" name="category" value="q-fin.*"><strong> q-fin.* (All)</strong></label>
+                <label><input type="checkbox" name="category" value="q-fin.CP"> q-fin.CP</label>
+                <label><input type="checkbox" name="category" value="q-fin.EC"> q-fin.EC</label>
+                <label><input type="checkbox" name="category" value="q-fin.GN"> q-fin.GN</label>
+                <label><input type="checkbox" name="category" value="q-fin.MF"> q-fin.MF</label>
+                <label><input type="checkbox" name="category" value="q-fin.PM"> q-fin.PM</label>
+                <label><input type="checkbox" name="category" value="q-fin.PR"> q-fin.PR</label>
+                <label><input type="checkbox" name="category" value="q-fin.RM"> q-fin.RM</label>
+                <label><input type="checkbox" name="category" value="q-fin.ST"> q-fin.ST</label>
+                <label><input type="checkbox" name="category" value="q-fin.TR"> q-fin.TR</label>
+            </div></details>
+            <!-- Statistics -->
+            <details><summary><strong>Statistics (stat)</strong></summary>
+            <div>
+                <label><input type="checkbox" name="category" value="stat.*"><strong> stat.* (All)</strong></label>
+                <label><input type="checkbox" name="category" value="stat.AP"> stat.AP</label>
+                <label><input type="checkbox" name="category" value="stat.CO"> stat.CO</label>
+                <label><input type="checkbox" name="category" value="stat.ME"> stat.ME</label>
+                <label><input type="checkbox" name="category" value="stat.ML"> stat.ML</label>
+                <label><input type="checkbox" name="category" value="stat.OT"> stat.OT</label>
+                <label><input type="checkbox" name="category" value="stat.TH"> stat.TH</label>
+            </div></details>
+        </div>
         <label>Max Results: <input type="number" id="maxResultsInput" value="10" min="1" max="2000"></label>
         <label>Sort By:
             <select id="sortBySelect">
@@ -98,8 +298,7 @@
 
             jsonOutput.textContent = JSON.stringify(jsonData, null, 2);
 
-            resultOutput.textContent = jsonData.map(({id, title, authors, summary}) =>
-                `ID: ${(id || 'N/A').replace('http://arxiv.org/abs/', '')}\n` +
+            resultOutput.textContent = jsonData.map(({title, authors, summary}) =>
                 `Title: ${title || 'N/A'}\n` +
                 `Authors: ${authors.map(a => a.name).join(', ')}\n` +
                 `Abstract: ${summary || 'N/A'}\n`
@@ -109,10 +308,23 @@
         }
 
         function generateArxivUrl() {
-            const cat = $('catInput').value.trim() || 'cs*';
+            // Get selected categories from checkboxes
+            const selectedCats = [...document.querySelectorAll('input[name="category"]:checked')]
+                .map(cb => cb.value);
+
+            // Default to cs.* if nothing selected
+            if (selectedCats.length === 0) {
+                selectedCats.push('cs.*');
+            }
+
+            // Build search query with OR for multiple categories
+            const catQuery = selectedCats.length === 1
+                ? `cat:${selectedCats[0]}`
+                : selectedCats.map(c => `cat:${c}`).join('+OR+');
+
             const maxResults = Math.min(2000, Math.max(1, +$('maxResultsInput').value || 10));
             const sortBy = $('sortBySelect').value;
-            const arxivUrl = `${ARXIV_BASE_URL}?search_query=cat:${encodeURIComponent(cat)}&max_results=${maxResults}&sortBy=${sortBy}`;
+            const arxivUrl = `${ARXIV_BASE_URL}?search_query=${catQuery}&max_results=${maxResults}&sortBy=${sortBy}`;
             $('urlDisplay').innerHTML = `<a href="${arxivUrl}" target="_blank">${arxivUrl}</a>`;
             return arxivUrl;
         }
