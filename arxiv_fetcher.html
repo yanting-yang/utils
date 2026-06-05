@@ -10,6 +10,7 @@
         .tab-content{display:none;overflow:auto;position:relative}
         .tab-content.active{display:block}
         pre{white-space:pre-wrap;word-wrap:break-word}
+        textarea{width:100%;min-height:300px;font-family:monospace;font-size:0.85em;box-sizing:border-box}
         .copy-btn{position:absolute;top:5px;right:5px}
     </style>
 </head>
@@ -236,7 +237,13 @@
     <fieldset>
         <legend>Step 2: Fetch Data</legend>
         <button id="fetchBtn">Fetch Publications</button>
-        using <a href="https://cors-anywhere.com/" target="_blank">CORS Anywhere</a> <b>OR</b> upload XML: <input type="file" id="xmlFileInput" accept=".xml">
+        using <a href="https://cors-anywhere.com/" target="_blank">CORS Anywhere</a>
+        <br>
+        <b>OR</b> upload XML: <input type="file" id="xmlFileInput" accept=".xml">
+        <br>
+        <b>OR</b> upload HTML: <input type="file" id="htmlFileInput" accept=".html,.htm">
+        <br>
+        <b>OR</b> paste HTML directly in the &quot;HTML Source&quot; tab below.
         <output id="status"></output>
     </fieldset>
 
@@ -244,11 +251,13 @@
         <legend>Step 3: View Results</legend>
         <div class="tabs">
             <button class="tab-btn active" data-tab="xml">Raw XML</button>
+            <button class="tab-btn" data-tab="html">HTML Source</button>
             <button class="tab-btn" data-tab="json">JSON</button>
             <button class="tab-btn" data-tab="result">Parsed Result</button>
         </div>
 
         <section id="xml" class="tab-content active"><button class="copy-btn" data-target="xmlOutput">Copy</button><pre id="xmlOutput"></pre></section>
+        <section id="html" class="tab-content"><button class="copy-btn" data-target="htmlInput">Copy</button><textarea id="htmlInput" placeholder="Paste the HTML source of an arXiv listing page (e.g. https://arxiv.org/list/cs.AI/new) here. JSON and Parsed Result tabs will update automatically."></textarea></section>
         <section id="json" class="tab-content"><button class="copy-btn" data-target="jsonOutput">Copy</button><pre id="jsonOutput"></pre></section>
         <section id="result" class="tab-content"><button class="copy-btn" data-target="resultOutput">Copy</button><pre id="resultOutput"></pre></section>
     </fieldset>
@@ -305,6 +314,108 @@
             ).join('\n') || 'No entries found.';
 
             return jsonData.length;
+        }
+
+        function processHtml(html) {
+            const [jsonOutput, resultOutput] = ['jsonOutput', 'resultOutput'].map($);
+
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const jsonData = [];
+
+            doc.querySelectorAll('dl#articles').forEach(dl => {
+                const section = dl.querySelector('h3')?.textContent?.trim() ?? null;
+                const dts = dl.querySelectorAll('dt');
+                const dds = dl.querySelectorAll('dd');
+                const n = Math.min(dts.length, dds.length);
+                for (let i = 0; i < n; i++) {
+                    jsonData.push(parseHtmlEntry(dts[i], dds[i], section));
+                }
+            });
+
+            jsonOutput.textContent = JSON.stringify(jsonData, null, 2);
+
+            resultOutput.textContent = jsonData.map(({title, authors, comments, abstract}) => {
+                const out = [
+                    `Title: ${title || 'N/A'}`,
+                    `Authors: ${authors.map(a => a.name).join(', ')}`,
+                ];
+                if (comments) out.push(`Comments: ${comments}`);
+                out.push(`Abstract: ${abstract || 'N/A'}`);
+                return out.join('\n') + '\n';
+            }).join('\n') || 'No entries found.';
+
+            return jsonData.length;
+        }
+
+        function parseHtmlEntry(dt, dd, section) {
+            const itemMatch = dt.querySelector('a[name]')?.getAttribute('name')?.match(/item(\d+)/);
+            const item_number = itemMatch ? +itemMatch[1] : null;
+
+            const absLink = dt.querySelector('a[href^="/abs/"]');
+            const arxiv_id = absLink?.getAttribute('href')?.replace('/abs/', '') ?? null;
+
+            const dtText = dt.textContent;
+            const crossMatch = dtText.match(/\(cross-list from ([^)]+)\)/);
+            const replacedMatch = dtText.match(/\(replaced\)/);
+            let listing_type = 'new';
+            let cross_list_from = null;
+            if (crossMatch) {
+                listing_type = 'cross-list';
+                cross_list_from = crossMatch[1].trim();
+            } else if (replacedMatch) {
+                listing_type = 'replaced';
+            }
+
+            const links = {};
+            if (arxiv_id) links.abs = `/abs/${arxiv_id}`;
+            dt.querySelectorAll('a[id]').forEach(a => {
+                const id = a.getAttribute('id');
+                const href = a.getAttribute('href');
+                if (id.startsWith('pdf-')) links.pdf = href;
+                else if (id.startsWith('html-')) links.html = href;
+                else if (id.startsWith('oth-')) links.format = href;
+            });
+
+            const stripDescriptor = el => {
+                if (!el) return null;
+                const clone = el.cloneNode(true);
+                clone.querySelector('.descriptor')?.remove();
+                return clone.textContent.replace(/\s+/g, ' ').trim();
+            };
+
+            const title = stripDescriptor(dd.querySelector('.list-title'));
+
+            const authors = [...(dd.querySelector('.list-authors')?.querySelectorAll('a') ?? [])]
+                .map(a => ({
+                    name: a.textContent.trim(),
+                    href: a.getAttribute('href')
+                }));
+
+            const comments = stripDescriptor(dd.querySelector('.list-comments'));
+
+            const subjectsEl = dd.querySelector('.list-subjects');
+            const primary_subject = subjectsEl?.querySelector('.primary-subject')?.textContent?.trim() ?? null;
+            const subjectsText = stripDescriptor(subjectsEl);
+            const subjects = subjectsText
+                ? subjectsText.split(';').map(s => s.trim()).filter(Boolean)
+                : [];
+
+            const abstract = dd.querySelector('p.mathjax')?.textContent?.replace(/\s+/g, ' ').trim() ?? null;
+
+            return {
+                item_number,
+                arxiv_id,
+                section,
+                listing_type,
+                cross_list_from,
+                title,
+                authors,
+                comments,
+                primary_subject,
+                subjects,
+                abstract,
+                links
+            };
         }
 
         function generateArxivUrl() {
@@ -374,10 +485,48 @@
             reader.readAsText(file);
         }
 
+        function handleHtmlFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const status = $('status');
+            status.textContent = 'Reading HTML file...';
+            $('urlDisplay').textContent = `File: ${file.name}`;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const html = evt.target.result;
+                $('htmlInput').value = html;
+                try {
+                    const count = processHtml(html);
+                    status.textContent = `Done! Found ${count} entries from HTML file.`;
+                } catch (error) {
+                    status.textContent = 'Error parsing HTML: ' + error.message;
+                }
+            };
+            reader.onerror = () => status.textContent = 'Error reading file.';
+            reader.readAsText(file);
+        }
+
+        function handleHtmlInput() {
+            const html = $('htmlInput').value;
+            const status = $('status');
+            if (!html.trim()) {
+                $('jsonOutput').textContent = $('resultOutput').textContent = '';
+                return;
+            }
+            try {
+                const count = processHtml(html);
+                status.textContent = `Done! Found ${count} entries from pasted HTML.`;
+            } catch (error) {
+                status.textContent = 'Error parsing HTML: ' + error.message;
+            }
+        }
+
         // Copy button functionality
         $$('.copy-btn').forEach(btn => btn.addEventListener('click', async () => {
-            const targetId = btn.dataset.target;
-            const text = $(targetId).textContent;
+            const target = $(btn.dataset.target);
+            const text = target.value ?? target.textContent;
             if (!text) return;
             try {
                 await navigator.clipboard.writeText(text);
@@ -392,6 +541,8 @@
         $('generateUrlBtn').addEventListener('click', generateArxivUrl);
         $('fetchBtn').addEventListener('click', fetchArxiv);
         $('xmlFileInput').addEventListener('change', handleFileUpload);
+        $('htmlFileInput').addEventListener('change', handleHtmlFileUpload);
+        $('htmlInput').addEventListener('input', handleHtmlInput);
     </script>
 </body>
 </html>
