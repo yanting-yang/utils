@@ -5,13 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>arXiv Fetcher</title>
     <style>
-        .tabs{display:flex}
+        .tabs{display:flex;flex-wrap:wrap}
         .tab-btn.active{font-weight:bold}
         .tab-content{display:none;overflow:auto;position:relative}
         .tab-content.active{display:block}
         pre{white-space:pre-wrap;word-wrap:break-word}
         textarea{width:100%;min-height:300px;font-family:monospace;font-size:0.85em;box-sizing:border-box}
         .copy-btn{position:absolute;top:5px;right:5px}
+        #urlDisplay{overflow-wrap:anywhere;margin-top:0.5em}
+        .date-controls{display:flex;flex-wrap:wrap;align-items:center;gap:0.75em;margin:0.75em 0}
+        #statistics table{border-collapse:collapse;margin:0.75em 0}
+        #statistics th,#statistics td{border:1px solid #ccc;padding:0.4em 1em;text-align:left}
+        #statistics td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+        #categoryStatistics details{margin:0.75em 0}
+        #categoryStatistics summary{cursor:pointer}
     </style>
 </head>
 <body>
@@ -221,8 +228,8 @@
                 <label><input type="checkbox" name="category" value="stat.TH"> stat.TH</label>
             </div></details>
         </div>
-        <label>Max Results: <input type="number" id="maxResultsInput" value="10" min="1" max="2000"></label>
-        <label>Sort By:
+        <label>Max Results (XML API): <input type="number" id="maxResultsInput" value="10" min="1" max="2000"></label>
+        <label>Sort By (XML API):
             <select id="sortBySelect">
                 <option value="relevance">Relevance</option>
                 <option value="lastUpdatedDate" selected>Last Updated Date</option>
@@ -230,58 +237,242 @@
             </select>
         </label>
         <br>
-        <button type="button" id="generateUrlBtn">Generate URL</button>
-        <output id="urlDisplay"></output>
+        <button type="button" id="generateUrlBtn">Generate URLs</button>
+        <div id="urlDisplay" aria-live="polite"></div>
     </fieldset>
 
     <fieldset>
-        <legend>Step 2: Fetch Data</legend>
-        <button id="fetchBtn">Fetch Publications</button>
-        using <a href="https://cors-anywhere.com/" target="_blank">CORS Anywhere</a>
-        <br>
-        <b>OR</b> upload XML: <input type="file" id="xmlFileInput" accept=".xml">
+        <legend>Step 2: Import Data</legend>
+        Upload XML: <input type="file" id="xmlFileInput">
         <br>
         <b>OR</b> upload HTML: <input type="file" id="htmlFileInput" accept=".html,.htm">
         <br>
-        <b>OR</b> paste HTML directly in the &quot;HTML Source&quot; tab below.
-        <output id="status"></output>
+        <b>OR</b> paste HTML directly:
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="html">HTML Source</button>
+        </div>
+        <section id="html" class="tab-content active"><button class="copy-btn" data-target="htmlInput">Copy</button><textarea id="htmlInput" aria-label="HTML Source" placeholder="Paste the HTML source of an arXiv listing page (e.g. https://arxiv.org/list/cs.AI/new) here. JSON, Parsed Result, and Statistics tabs will update automatically."></textarea></section>
+        <output id="status" aria-live="polite"></output>
     </fieldset>
 
     <fieldset>
         <legend>Step 3: View Results</legend>
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="xml">Raw XML</button>
-            <button class="tab-btn" data-tab="html">HTML Source</button>
-            <button class="tab-btn" data-tab="json">JSON</button>
-            <button class="tab-btn" data-tab="result">Parsed Result</button>
-        </div>
+        <p id="resultsEmpty">Import XML or HTML in Step 2 to view results.</p>
+        <div id="resultsContent" hidden>
+            <div class="date-controls">
+                <label>Date field: <select id="dateFieldSelect" disabled><option value="updated">Last updated</option><option value="published">Published</option></select></label>
+                <label>Filter JSON / Parsed Result by date: <select id="dateFilterSelect" disabled><option value="">All dates</option></select></label>
+                <output id="filterStatus" aria-live="polite">No papers loaded.</output>
+            </div>
+            <div class="tabs">
+                <button id="rawXmlTab" class="tab-btn active" data-tab="xml">Raw XML</button>
+                <button class="tab-btn" data-tab="statistics">Statistics</button>
+                <button class="tab-btn" data-tab="json">JSON</button>
+                <button class="tab-btn" data-tab="result">Parsed Result</button>
+            </div>
 
-        <section id="xml" class="tab-content active"><button class="copy-btn" data-target="xmlOutput">Copy</button><pre id="xmlOutput"></pre></section>
-        <section id="html" class="tab-content"><button class="copy-btn" data-target="htmlInput">Copy</button><textarea id="htmlInput" placeholder="Paste the HTML source of an arXiv listing page (e.g. https://arxiv.org/list/cs.AI/new) here. JSON and Parsed Result tabs will update automatically."></textarea></section>
-        <section id="json" class="tab-content"><button class="copy-btn" data-target="jsonOutput">Copy</button><pre id="jsonOutput"></pre></section>
-        <section id="result" class="tab-content"><button class="copy-btn" data-target="resultOutput">Copy</button><pre id="resultOutput"></pre></section>
+            <section id="xml" class="tab-content active"><button class="copy-btn" data-target="xmlOutput">Copy</button><pre id="xmlOutput"></pre></section>
+            <section id="statistics" class="tab-content">
+                <p>Counts include all loaded papers, regardless of the output date filter. Missing or invalid dates are grouped as Unknown date.</p>
+                <p id="statisticsSummary" aria-live="polite">No papers loaded.</p>
+                <table id="statisticsTable" hidden>
+                    <caption id="statisticsCaption">Papers by date</caption>
+                    <thead><tr><th scope="col">Date</th><th scope="col">Papers</th></tr></thead>
+                    <tbody id="statisticsBody"></tbody>
+                    <tfoot><tr><th scope="row">Total</th><td id="statisticsTotal">0</td></tr></tfoot>
+                </table>
+                <h3>Papers by main category</h3>
+                <p>Each paper is counted once under its main category. Papers without a main category appear under Unknown category. Expand a category to see its dates.</p>
+                <div id="categoryStatistics"></div>
+            </section>
+            <section id="json" class="tab-content"><button class="copy-btn" data-target="jsonOutput">Copy</button><pre id="jsonOutput"></pre></section>
+            <section id="result" class="tab-content"><button class="copy-btn" data-target="resultOutput">Copy</button><pre id="resultOutput"></pre></section>
+        </div>
     </fieldset>
 
     <script>
         const $ = id => document.getElementById(id);
         const $$ = sel => document.querySelectorAll(sel);
 
-        // Tab switching
-        $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
-            $$('.tab-btn').forEach(b => b.classList.remove('active'));
-            $$('.tab-content').forEach(c => c.classList.remove('active'));
+        // Each step keeps its own active tab.
+        function activateTab(btn) {
+            if (btn.hidden) return;
+            const step = btn.closest('fieldset');
+            step.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            step.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             btn.classList.add('active');
             $(btn.dataset.tab).classList.add('active');
-        }));
+        }
+        $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => activateTab(btn)));
 
-        const PROXY_URL = 'https://cors-anywhere.com/';
         const ARXIV_BASE_URL = 'http://export.arxiv.org/api/query';
 
+        let papers = [];
+        let resultSource = 'xml';
+        const UNKNOWN_DATE = 'unknown';
+        const UNKNOWN_CATEGORY = 'Unknown category';
+
+        // Keep the source calendar day instead of shifting it into the local timezone.
+        function normalizeDate(value) {
+            const match = value?.trim().match(/^(\d{4}-\d{2}-\d{2})(?=$|T|\s)/);
+            if (!match) return null;
+            const date = new Date(`${match[1]}T00:00:00Z`);
+            return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === match[1]
+                ? match[1] : null;
+        }
+
+        function dateFromHeading(text) {
+            const iso = text.match(/\b\d{4}-\d{2}-\d{2}\b/);
+            if (iso) return normalizeDate(iso[0]);
+            const match = text.match(/\b(\d{1,2})\s+(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{4})\b/i);
+            // Undated subsection headings inherit the date; invalid dates explicitly clear it.
+            if (!match) return undefined;
+            const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+            const month = months.indexOf(match[2].slice(0, 3).toLowerCase()) + 1;
+            return normalizeDate(`${match[3]}-${String(month).padStart(2, '0')}-${match[1].padStart(2, '0')}`);
+        }
+
+        function paperDate(paper) {
+            return normalizeDate(paper[$('dateFieldSelect').value]) ?? UNKNOWN_DATE;
+        }
+
+        function setPapers(data, source) {
+            papers = data;
+            resultSource = source;
+            $('resultsContent').hidden = !papers.length;
+            $('resultsEmpty').hidden = !!papers.length;
+            $('rawXmlTab').hidden = source === 'html';
+            if (source === 'html') $('xmlOutput').textContent = '';
+            const activeTab = $('resultsContent').querySelector('.tab-btn.active');
+            if (!activeTab || activeTab.hidden) {
+                activateTab($('resultsContent').querySelector('[data-tab="statistics"]'));
+            }
+            const fields = source === 'html'
+                ? [['listing_date', 'Listing date']]
+                : [['updated', 'Last updated'], ['published', 'Published']];
+            $('dateFieldSelect').replaceChildren(...fields.map(([value, label]) => new Option(label, value)));
+            $('dateFieldSelect').disabled = !papers.length || fields.length === 1;
+            refreshDates();
+        }
+
+        function mainCategory(paper) {
+            if (resultSource === 'xml') {
+                return paper['arxiv:primary_category']?.trim() || UNKNOWN_CATEGORY;
+            }
+            const label = paper.primary_subject?.trim();
+            return label?.match(/\(([^()]+)\)\s*$/)?.[1].trim() || label || UNKNOWN_CATEGORY;
+        }
+
+        function sortedDates(counts) {
+            const dates = [...counts.keys()].filter(date => date !== UNKNOWN_DATE).sort().reverse();
+            if (counts.has(UNKNOWN_DATE)) dates.push(UNKNOWN_DATE);
+            return dates;
+        }
+
+        function statisticsRow(label, count) {
+            const row = document.createElement('tr');
+            const heading = document.createElement('th');
+            heading.scope = 'row';
+            heading.textContent = label;
+            const value = document.createElement('td');
+            value.textContent = count;
+            row.append(heading, value);
+            return row;
+        }
+
+        function renderCategoryStatistics(field) {
+            const categories = new Map();
+            papers.forEach(paper => {
+                const date = paperDate(paper);
+                const category = mainCategory(paper);
+                if (!categories.has(category)) categories.set(category, {total: 0, dates: new Map()});
+                const group = categories.get(category);
+                group.total++;
+                group.dates.set(date, (group.dates.get(date) || 0) + 1);
+            });
+            const groups = [...categories].sort(([a, first], [b, second]) => {
+                if (a === UNKNOWN_CATEGORY) return 1;
+                if (b === UNKNOWN_CATEGORY) return -1;
+                return second.total - first.total || a.localeCompare(b);
+            });
+            $('categoryStatistics').replaceChildren(...groups.map(([category, group], index) => {
+                const details = document.createElement('details');
+                details.open = index === 0;
+                const summary = document.createElement('summary');
+                summary.textContent = `${category}: ${group.total} ${group.total === 1 ? 'paper' : 'papers'}`;
+                const table = document.createElement('table');
+                table.createCaption().textContent = `${category} papers by ${field.toLowerCase()}`;
+                const header = table.createTHead().insertRow();
+                ['Date', 'Papers'].forEach(label => {
+                    const heading = document.createElement('th');
+                    heading.scope = 'col';
+                    heading.textContent = label;
+                    header.append(heading);
+                });
+                const body = table.createTBody();
+                sortedDates(group.dates).forEach(date => {
+                    body.append(statisticsRow(date === UNKNOWN_DATE ? 'Unknown date' : date, group.dates.get(date)));
+                });
+                table.createTFoot().append(statisticsRow('Total', group.total));
+                details.append(summary, table);
+                return details;
+            }));
+        }
+
+        function refreshDates() {
+            const counts = new Map();
+            papers.forEach(paper => {
+                const date = paperDate(paper);
+                counts.set(date, (counts.get(date) || 0) + 1);
+            });
+            const dates = sortedDates(counts);
+
+            $('dateFilterSelect').replaceChildren(new Option('All dates', ''), ...dates.map(date =>
+                new Option(`${date === UNKNOWN_DATE ? 'Unknown date' : date} (${counts.get(date)})`, date)
+            ));
+            $('dateFilterSelect').disabled = !papers.length;
+            $('statisticsBody').replaceChildren(...dates.map(date =>
+                statisticsRow(date === UNKNOWN_DATE ? 'Unknown date' : date, counts.get(date))
+            ));
+            const field = $('dateFieldSelect').selectedOptions[0].textContent;
+            $('statisticsCaption').textContent = `Papers by ${field.toLowerCase()}`;
+            $('statisticsSummary').textContent = papers.length ? `${papers.length} papers loaded.` : 'No papers loaded.';
+            $('statisticsTotal').textContent = papers.length;
+            $('statisticsTable').hidden = !papers.length;
+            renderCategoryStatistics(field);
+            renderResults();
+        }
+
+        function renderResults() {
+            const selectedDate = $('dateFilterSelect').value;
+            const filtered = papers.filter(paper => !selectedDate || paperDate(paper) === selectedDate);
+            $('filterStatus').textContent = papers.length
+                ? `Showing ${filtered.length} of ${papers.length} papers.` : 'No papers loaded.';
+            $('jsonOutput').textContent = JSON.stringify(filtered, null, 2);
+            const field = $('dateFieldSelect').selectedOptions[0].textContent;
+            $('resultOutput').textContent = filtered.map(paper => {
+                const out = [
+                    `Title: ${paper.title || 'N/A'}`,
+                    `Authors: ${paper.authors.map(a => a.name).join(', ')}`
+                ];
+                if ($('dateFieldSelect').value === 'listing_date') {
+                    const date = paperDate(paper);
+                    out.push(`${field}: ${date === UNKNOWN_DATE ? 'Unknown date' : date}`);
+                }
+                if (resultSource === 'html' && paper.comments) out.push(`Comments: ${paper.comments}`);
+                out.push(`Abstract: ${(resultSource === 'html' ? paper.abstract : paper.summary) || 'N/A'}`);
+                return out.join('\n') + '\n';
+            }).join('\n') || (selectedDate ? 'No entries found for this date.' : 'No entries found.');
+        }
+
         function processXml(xml) {
-            const [xmlOutput, jsonOutput, resultOutput] = ['xmlOutput', 'jsonOutput', 'resultOutput'].map($);
-            xmlOutput.textContent = xml;
+            $('xmlOutput').textContent = xml;
 
             const doc = new DOMParser().parseFromString(xml, 'application/xml');
+            if (doc.querySelector('parsererror')) {
+                setPapers([], 'xml');
+                throw new Error('Invalid XML document.');
+            }
             const jsonData = [...doc.querySelectorAll('entry')].map(entry => ({
                 id: entry.querySelector('id')?.textContent ?? null,
                 title: entry.querySelector('title')?.textContent?.trim() ?? null,
@@ -305,44 +496,31 @@
                 }))
             }));
 
-            jsonOutput.textContent = JSON.stringify(jsonData, null, 2);
-
-            resultOutput.textContent = jsonData.map(({title, authors, summary}) =>
-                `Title: ${title || 'N/A'}\n` +
-                `Authors: ${authors.map(a => a.name).join(', ')}\n` +
-                `Abstract: ${summary || 'N/A'}\n`
-            ).join('\n') || 'No entries found.';
+            setPapers(jsonData, 'xml');
 
             return jsonData.length;
         }
 
         function processHtml(html) {
-            const [jsonOutput, resultOutput] = ['jsonOutput', 'resultOutput'].map($);
-
             const doc = new DOMParser().parseFromString(html, 'text/html');
             const jsonData = [];
-
-            doc.querySelectorAll('dl#articles').forEach(dl => {
-                const section = dl.querySelector('h3')?.textContent?.trim() ?? null;
-                const dts = dl.querySelectorAll('dt');
-                const dds = dl.querySelectorAll('dd');
-                const n = Math.min(dts.length, dds.length);
-                for (let i = 0; i < n; i++) {
-                    jsonData.push(parseHtmlEntry(dts[i], dds[i], section));
+            let section = null;
+            let listingDate = null;
+            // Listing dates may precede a plain dl (/recent) or sit inside dl#articles (/new).
+            const listing = doc.querySelector('#dlpage') ?? doc.body;
+            listing.querySelectorAll('h1, h2, h3, h4, dl > dt').forEach(element => {
+                if (element.tagName !== 'DT') {
+                    const text = element.textContent.trim();
+                    const date = dateFromHeading(text);
+                    if (date !== undefined) listingDate = date;
+                    if (element.tagName === 'H3') section = text;
+                    return;
                 }
+                const dd = element.nextElementSibling;
+                if (dd?.tagName !== 'DD' || !element.querySelector('a[href^="/abs/"]')) return;
+                jsonData.push({...parseHtmlEntry(element, dd, section), listing_date: listingDate});
             });
-
-            jsonOutput.textContent = JSON.stringify(jsonData, null, 2);
-
-            resultOutput.textContent = jsonData.map(({title, authors, comments, abstract}) => {
-                const out = [
-                    `Title: ${title || 'N/A'}`,
-                    `Authors: ${authors.map(a => a.name).join(', ')}`,
-                ];
-                if (comments) out.push(`Comments: ${comments}`);
-                out.push(`Abstract: ${abstract || 'N/A'}`);
-                return out.join('\n') + '\n';
-            }).join('\n') || 'No entries found.';
+            setPapers(jsonData, 'html');
 
             return jsonData.length;
         }
@@ -418,7 +596,7 @@
             };
         }
 
-        function generateArxivUrl() {
+        function generateArxivUrls() {
             // Get selected categories from checkboxes
             const selectedCats = [...document.querySelectorAll('input[name="category"]:checked')]
                 .map(cb => cb.value);
@@ -436,32 +614,23 @@
             const maxResults = Math.min(2000, Math.max(1, +$('maxResultsInput').value || 10));
             const sortBy = $('sortBySelect').value;
             const arxivUrl = `${ARXIV_BASE_URL}?search_query=${catQuery}&max_results=${maxResults}&sortBy=${sortBy}`;
-            $('urlDisplay').innerHTML = `<a href="${arxivUrl}" target="_blank">${arxivUrl}</a>`;
-            return arxivUrl;
-        }
-
-        async function fetchArxiv() {
-            const status = $('status');
-            const arxivUrl = generateArxivUrl();
-
-            status.textContent = 'Fetching data...';
-            $('xmlOutput').textContent = $('jsonOutput').textContent = $('resultOutput').textContent = '';
-
-            try {
-                const response = await fetch(PROXY_URL + arxivUrl);
-                if (!response.ok) {
-                    throw new Error(response.status === 403
-                        ? 'Access Denied. Please visit the CORS Anywhere demo page to request temporary access.'
-                        : 'Network response was not ok: ' + response.statusText);
-                }
-
-                const xml = await response.text();
-                const count = processXml(xml);
-                status.textContent = `Done! Found ${count} entries.`;
-            } catch (error) {
-                status.textContent = 'Error: ' + error.message;
-                console.error('Fetch error:', error);
-            }
+            const output = $('urlDisplay');
+            output.replaceChildren();
+            const appendUrl = (label, url) => {
+                const row = document.createElement('div');
+                const link = document.createElement('a');
+                link.href = url;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = url;
+                row.append(`${label}: `, link);
+                output.append(row);
+            };
+            appendUrl('XML API', arxivUrl);
+            const listingCategories = [...new Set(selectedCats.map(category => category.replace(/\.\*$/, '')))];
+            listingCategories.forEach(category => {
+                appendUrl(`Recent listing (${category})`, `https://arxiv.org/list/${category}/recent`);
+            });
         }
 
         function handleFileUpload(e) {
@@ -470,7 +639,6 @@
 
             const status = $('status');
             status.textContent = 'Reading file...';
-            $('urlDisplay').textContent = `File: ${file.name}`;
 
             const reader = new FileReader();
             reader.onload = (evt) => {
@@ -491,7 +659,6 @@
 
             const status = $('status');
             status.textContent = 'Reading HTML file...';
-            $('urlDisplay').textContent = `File: ${file.name}`;
 
             const reader = new FileReader();
             reader.onload = (evt) => {
@@ -512,7 +679,8 @@
             const html = $('htmlInput').value;
             const status = $('status');
             if (!html.trim()) {
-                $('jsonOutput').textContent = $('resultOutput').textContent = '';
+                setPapers([], 'html');
+                status.textContent = '';
                 return;
             }
             try {
@@ -538,11 +706,12 @@
             }
         }));
 
-        $('generateUrlBtn').addEventListener('click', generateArxivUrl);
-        $('fetchBtn').addEventListener('click', fetchArxiv);
+        $('generateUrlBtn').addEventListener('click', generateArxivUrls);
         $('xmlFileInput').addEventListener('change', handleFileUpload);
         $('htmlFileInput').addEventListener('change', handleHtmlFileUpload);
         $('htmlInput').addEventListener('input', handleHtmlInput);
+        $('dateFieldSelect').addEventListener('change', refreshDates);
+        $('dateFilterSelect').addEventListener('change', renderResults);
     </script>
 </body>
 </html>
